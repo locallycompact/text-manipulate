@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
 
 -- Module      : Data.Text.Manipulate.Internal.Fusion
 -- Copyright   : (c) 2014-2020 Brendan Hay <brendan.g.hay@gmail.com>
@@ -29,7 +30,11 @@ takeWord = transform (const Done) yield . tokenise
 {-# INLINE [0] takeWord #-}
 
 dropWord :: Stream Char -> Stream Char
+#ifndef __GHCJS__
 dropWord (tokenise -> Stream next0 s0 len) = Stream next (True :*: s0) len
+#else
+dropWord (tokenise -> Stream next0 s0) = Stream next (True :*: s0)
+#endif
   where
     next (skip :*: s) =
       case next0 s of
@@ -113,9 +118,14 @@ transformWith ::
   -- | Input stream.
   Stream Token ->
   Stream Char
+#ifndef __GHCJS__
 transformWith md mu mc (Stream next0 s0 len) =
-  -- HINT: len incorrect when the boundary replacement yields a char.
   Stream next (CC (False :*: False :*: s0) '\0' '\0') len
+#else
+transformWith md mu mc (Stream next0 s0) =
+  Stream next (CC (False :*: False :*: s0) '\0' '\0')
+#endif
+  -- HINT: len incorrect when the boundary replacement yields a char.
   where
     next (CC (up :*: prev :*: s) '\0' _) =
       case next0 s of
@@ -159,9 +169,15 @@ tokeniseWith ::
   -- | Input stream.
   Stream Char ->
   Stream Token
+
+#ifndef __GHCJS__
 tokeniseWith f (Stream next0 s0 len) =
-  -- HINT: len incorrect if there are adjacent boundaries, which are skipped.
   Stream next (CC (True :*: False :*: False :*: s0) '\0' '\0') len
+#else
+tokeniseWith f (Stream next0 s0) =
+  Stream next (CC (True :*: False :*: False :*: s0) '\0' '\0')
+#endif
+  -- HINT: len incorrect if there are adjacent boundaries, which are skipped.
   where
     next (CC (start :*: up :*: prev :*: s) '\0' _) =
       case next0 s of

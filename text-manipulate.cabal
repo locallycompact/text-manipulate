@@ -36,7 +36,9 @@ common base
   ghc-options:
     -Wall -funbox-strict-fields -fwarn-incomplete-uni-patterns
     -fwarn-incomplete-record-updates
-
+  if impl(ghcjs)
+    build-depends:
+      ghcjs-base
   build-depends:    base >=4.6 && <5
 
 library
